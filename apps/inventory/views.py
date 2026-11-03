@@ -5,13 +5,15 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .access import require_permission, warehouses_for
-from .forms import MovementForm, MovementLineFormSet, ProductForm
+from .forms import InventoryCountForm, MovementForm, MovementLineFormSet, ProductForm
 from .models import AuditEvent, Balance, LotBalance, Movement, MovementLine, Product
+from .reconciliation import compare_inventory_count, count_template
 from .services import cancel_draft, confirm_movement, create_draft, save_product
 
 
@@ -73,6 +75,47 @@ def stock(request):
             "selected_warehouse": request.GET.get("warehouse", ""),
             "status": status,
         },
+    )
+
+
+@login_required
+@permission_required("inventory.view_stock", raise_exception=True)
+@require_GET
+def inventory_count_template(request):
+    response = HttpResponse(
+        count_template().getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="plantilla_conteo_inventario.xlsx"'
+    return response
+
+
+@login_required
+@permission_required("inventory.view_stock", raise_exception=True)
+@require_http_methods(["GET", "POST"])
+def reconcile_inventory(request):
+    form = InventoryCountForm(request.POST or None, request.FILES or None, user=request.user)
+    results = []
+    summary = {}
+    if request.method == "POST" and form.is_valid():
+        try:
+            results = compare_inventory_count(
+                warehouse=form.cleaned_data["warehouse"],
+                uploaded_file=form.cleaned_data["file"],
+            )
+        except ValidationError as exc:
+            form.add_error("file", exc.messages)
+        else:
+            summary = {
+                "total": len(results),
+                "matches": sum(row["status"] == "Coincide" for row in results),
+                "differences": sum(row["status"] == "Diferencia" for row in results),
+                "review": sum(row["status"] not in ("Coincide", "Diferencia") for row in results),
+            }
+    return render(
+        request,
+        "inventory/reconcile.html",
+        {"form": form, "results": results, "summary": summary},
     )
 
 

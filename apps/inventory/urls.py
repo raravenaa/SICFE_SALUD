@@ -5,6 +5,12 @@ from . import views
 app_name = "inventory"
 urlpatterns = [
     path("", views.stock, name="stock"),
+    path("conciliar/", views.reconcile_inventory, name="reconcile_inventory"),
+    path(
+        "conciliar/plantilla.xlsx",
+        views.inventory_count_template,
+        name="inventory_count_template",
+    ),
     path("productos/", views.products, name="products"),
     path("productos/nuevo/", views.product_edit, name="product_create"),
     path("productos/<int:pk>/", views.product_edit, name="product_edit"),

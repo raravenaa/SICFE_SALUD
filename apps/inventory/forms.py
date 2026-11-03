@@ -28,6 +28,26 @@ class MovementForm(forms.Form):
         self.fields["warehouse"].queryset = warehouses_for(user).filter(active=True)
 
 
+class InventoryCountForm(forms.Form):
+    warehouse = forms.ModelChoiceField(label="Bodega", queryset=Warehouse.objects.none())
+    file = forms.FileField(
+        label="Archivo Excel (.xlsx)",
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+    )
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["warehouse"].queryset = warehouses_for(user).filter(active=True)
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        if not uploaded_file.name.lower().endswith(".xlsx"):
+            raise forms.ValidationError("Carga un archivo Excel con formato .xlsx.")
+        if uploaded_file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("El archivo no puede superar 5 MB.")
+        return uploaded_file
+
+
 class MovementLineForm(forms.Form):
     product = forms.ModelChoiceField(label="Producto", queryset=Product.objects.filter(active=True))
     lot_code = forms.CharField(label="Código de lote", max_length=80)

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Conciliar conteo{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div><h1>Conciliar inventario físico</h1><p class="muted">Comparación por bodega, producto y lote. Las existencias no se modifican.</p></div>
+  <a class="button secondary" href="{% url 'inventory:inventory_count_template' %}">Descargar plantilla Excel</a>
+</div>
+<form class="card" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p class="helptext">Columnas: Código producto, Lote, Vencimiento y Cantidad contada. Máximo 5 MB y 5.000 filas.</p>
+  <button type="submit">Comparar archivo</button>
+</form>
+{% if summary %}
+<section aria-labelledby="result-heading">
+  <h2 id="result-heading">Resultado de la comparación</h2>
+  <p class="muted">{{ summary.total }} filas · {{ summary.matches }} coinciden · {{ summary.differences }} con diferencia · {{ summary.review }} por revisar</p>
+  <div class="card scroll">
+    <table>
+      <thead><tr><th>Fila</th><th>Producto</th><th>Lote</th><th>Vencimiento</th><th class="number">Sistema</th><th class="number">Contada</th><th class="number">Diferencia</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for row in results %}
+        <tr>
+          <td>{{ row.row_number|default_if_none:"-" }}</td>
+          <td>{{ row.product_code }}{% if row.product_name %}<br><small>{{ row.product_name }}</small>{% endif %}</td>
+          <td>{{ row.lot_code }}</td>
+          <td>{{ row.expires_on|date:"d/m/Y"|default_if_none:"-" }}</td>
+          <td class="number">{{ row.system_quantity|floatformat:3|default_if_none:"-" }}</td>
+          <td class="number">{{ row.counted_quantity|floatformat:3|default_if_none:"-" }}</td>
+          <td class="number">{{ row.difference|floatformat:3|default_if_none:"-" }}</td>
+          <td><span class="badge {% if row.status != 'Coincide' %}warning{% endif %}">{{ row.status }}</span>{% if row.detail %}<br><small class="muted">{{ row.detail }}</small>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

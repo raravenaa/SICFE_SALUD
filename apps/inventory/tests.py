@@ -2,19 +2,21 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from decimal import Decimal
-from io import StringIO
+from io import BytesIO, StringIO
 from threading import Barrier
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DatabaseError, close_old_connections, connection, transaction
 from django.db.models import Sum
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
+from openpyxl import Workbook
 
 from .models import (
     AuditEvent,
@@ -68,6 +70,58 @@ class Scenario:
 class InventoryTests(Scenario, TestCase):
     def setUp(self):
         self.setup_scenario()
+
+    def count_file(self, rows):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(["Código producto", "Lote", "Vencimiento", "Cantidad contada"])
+        for row in rows:
+            sheet.append(row)
+        content = BytesIO()
+        workbook.save(content)
+        return SimpleUploadedFile(
+            "conteo.xlsx",
+            content.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    def test_excel_reconciliation_reports_differences_without_changing_stock(self):
+        self.confirm(self.draft(lines=[self.line(), self.line("20", lot="B")]))
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("inventory:reconcile_inventory"),
+            {
+                "warehouse": self.warehouse.pk,
+                "file": self.count_file([[self.product.code, "A", self.expiry, 95]]),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Diferencia")
+        self.assertContains(response, "-5,000")
+        self.assertContains(response, "No incluido en Excel")
+        self.assertEqual(LotBalance.objects.get(lot__code="A").quantity, 100)
+        self.assertEqual(LotBalance.objects.get(lot__code="B").quantity, 20)
+
+    def test_excel_reconciliation_template_and_warehouse_access(self):
+        self.client.force_login(self.user)
+        template = self.client.get(reverse("inventory:inventory_count_template"))
+        self.assertEqual(template.status_code, 200)
+        self.assertEqual(
+            template["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        outsider = get_user_model().objects.create_user(username="sin_bodega_conteo")
+        outsider.groups.add(Group.objects.get(name="Operador"))
+        self.client.force_login(outsider)
+        response = self.client.post(
+            reverse("inventory:reconcile_inventory"),
+            {
+                "warehouse": self.warehouse.pk,
+                "file": self.count_file([["DEMO", "A", self.expiry, 1]]),
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["results"])
 
     def test_weighted_average_example_and_lot_totals(self):
         self.confirm(self.draft())
@@ -240,7 +294,14 @@ class InventoryTests(Scenario, TestCase):
     def test_all_screens_render_and_costs_are_hidden_from_operator(self):
         movement = self.confirm(self.draft())
         self.client.force_login(self.user)
-        for name in ["stock", "products", "movements", "movement_create", "ledger"]:
+        for name in [
+            "stock",
+            "reconcile_inventory",
+            "products",
+            "movements",
+            "movement_create",
+            "ledger",
+        ]:
             with self.subTest(screen=name):
                 self.assertEqual(self.client.get(reverse(f"inventory:{name}")).status_code, 200)
         response = self.client.get(reverse("inventory:movement_detail", args=[movement.pk]))

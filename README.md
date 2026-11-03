@@ -4,7 +4,7 @@ Sistema Integrado de Control y Fiscalización de Existencias.
 
 ## Estado
 
-Primera entrega operativa disponible: autenticación, perfiles y accesos por bodega, productos, lotes, saldos iniciales, ingresos, salidas, stock, costo promedio, kardex y auditoría básica. Probada con PostgreSQL local. Conteos físicos, ajustes aprobados, reportes Excel, dashboard e integración con AVIS continúan pendientes.
+Primera entrega operativa disponible: autenticación, perfiles y accesos por bodega, productos, lotes, saldos iniciales, ingresos, salidas, stock, costo promedio, kardex, auditoría básica y conciliación de conteos desde Excel. Probada con PostgreSQL local. Sesiones de conteo, ajustes aprobados, exportación de reportes, dashboard e integración con AVIS continúan pendientes.
 
 ## Ejecutar en Windows
 
@@ -34,6 +34,6 @@ Base de trabajo: `01_Visión_del_Proyecto_SICFE_v1.0.docx`, facilitado por el us
 
 ## Objetivo de la primera entrega funcional
 
-Un usuario autorizado ya puede registrar productos, ingresar existencias, registrar salidas y consultar stock y valorización, con trazabilidad de cada operación. Se implementó el control por lote y fecha de vencimiento solicitado. Las siguientes entregas incorporarán conteos, conciliación, ajustes, reportes Excel y dashboard.
+Un usuario autorizado ya puede registrar productos, ingresar existencias, registrar salidas y consultar stock y valorización, con trazabilidad de cada operación. Se implementó el control por lote y fecha de vencimiento solicitado. El módulo Conciliar conteo compara un archivo `.xlsx` por bodega, producto y lote, incluyendo los lotes con stock omitidos; la carga no guarda el archivo ni modifica existencias. Las siguientes entregas incorporarán sesiones de conteo, revisión y ajustes, exportación de reportes y dashboard.
 
 La entrega utiliza reglas iniciales documentadas para probar el flujo. Antes del piloto deben validarse la política de costos, permisos, vencimientos y conciliación con la operación institucional.

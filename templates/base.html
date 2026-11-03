@@ -43,6 +43,7 @@
     <nav aria-label="Principal">
       {% if user.is_authenticated %}
         {% if perms.inventory.view_stock %}<a href="{% url 'inventory:stock' %}">Existencias</a>{% endif %}
+        {% if perms.inventory.view_stock %}<a href="{% url 'inventory:reconcile_inventory' %}">Conciliar conteo</a>{% endif %}
         {% if perms.inventory.view_product %}<a href="{% url 'inventory:products' %}">Productos</a>{% endif %}
         {% if perms.inventory.view_movement %}<a href="{% url 'inventory:movements' %}">Movimientos</a><a href="{% url 'inventory:ledger' %}">Kardex</a>{% endif %}
         {% if perms.inventory.view_audit %}<a href="{% url 'inventory:audit' %}">Auditoría</a>{% endif %}
