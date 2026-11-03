@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Movimiento {{ movement.pk }}{% endblock %}
+{% block content %}
+<div class="toolbar"><h1>Movimiento #{{ movement.pk }}</h1><span class="badge">{{ movement.get_status_display }}</span></div>
+<section class="card grid"><div><strong>Tipo</strong><br>{{ movement.get_kind_display }}</div><div><strong>Bodega</strong><br>{{ movement.warehouse }}</div><div><strong>Fecha efectiva</strong><br>{{ movement.effective_date|date:'d/m/Y' }}</div><div><strong>Referencia</strong><br>{{ movement.reference }}</div><div><strong>Registrado por</strong><br>{{ movement.created_by }} · {{ movement.created_at|date:'d/m/Y H:i' }}</div><div><strong>Motivo</strong><br>{{ movement.reason }}</div>{% if movement.confirmed_at %}<div><strong>Confirmado por</strong><br>{{ movement.confirmed_by }} · {{ movement.confirmed_at|date:'d/m/Y H:i:s' }}</div>{% endif %}</section>
+<div class="card scroll"><table><thead><tr><th>Producto</th><th>Lote</th><th>Vencimiento</th><th class="number">Cantidad</th>{% if show_costs %}<th class="number">Costo unitario CLP</th><th class="number">Valor aplicado CLP</th>{% endif %}</tr></thead><tbody>
+{% for line in lines %}<tr><td>{{ line.lot.product }}</td><td>{{ line.lot.code }}</td><td>{{ line.lot.expires_on|date:'d/m/Y' }}</td><td class="number">{{ line.quantity|floatformat:3 }}</td>{% if show_costs %}<td class="number">{% if movement.kind == 'ISSUE' and movement.status != 'CONFIRMED' %}Al confirmar{% else %}{{ line.unit_cost|floatformat:6 }}{% endif %}</td><td class="number">{% if movement.status == 'CONFIRMED' %}{{ line.applied_value|floatformat:6 }}{% else %}Pendiente{% endif %}</td>{% endif %}</tr>{% endfor %}
+</tbody></table></div>
+{% if movement.status == 'DRAFT' and perms.inventory.record_movement %}<div class="actions">
+  <form method="post" action="{% url 'inventory:movement_confirm' movement.pk %}">{% csrf_token %}<button>Confirmar y actualizar stock</button></form>
+  <form method="post" action="{% url 'inventory:movement_cancel' movement.pk %}">{% csrf_token %}<button class="secondary">Cancelar borrador</button></form>
+</div><p class="muted">Al confirmar, el movimiento queda registrado sin edición. Para corregir este borrador, cancélalo y registra uno nuevo.</p>{% endif %}
+<p><a href="{% url 'inventory:movements' %}">Volver a movimientos</a></p>
+{% endblock %}

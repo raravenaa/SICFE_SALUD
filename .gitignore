@@ -1,0 +1,13 @@
+.venv/
+.env
+.runtime/
+.local/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.coverage
+htmlcov/
+staticfiles/
+media/
+.vscode/
+

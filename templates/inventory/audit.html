@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Auditoría{% endblock %}
+{% block content %}
+<h1>Auditoría</h1><p class="muted">Registro de catálogo y movimientos. Los cambios de usuarios, bodegas y accesos se consultan en el historial de Administración.</p>
+<div class="card scroll"><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Bodega</th><th>Movimiento</th>{% if perms.inventory.view_costs %}<th>Detalle</th>{% endif %}</tr></thead><tbody>
+{% for event in page %}<tr><td>{{ event.occurred_at|date:'d/m/Y H:i:s' }}</td><td>{{ event.actor }}</td><td>{{ event.action_label }}</td><td>{{ event.warehouse|default:'Catálogo general' }}</td><td>{% if event.movement_id %}<a href="{% url 'inventory:movement_detail' event.movement_id %}">#{{ event.movement_id }}</a>{% else %}—{% endif %}</td>{% if perms.inventory.view_costs %}<td><pre>{{ event.detail }}</pre></td>{% endif %}</tr>{% empty %}<tr><td class="empty" colspan="6">Sin eventos disponibles.</td></tr>{% endfor %}
+</tbody></table>{% include 'inventory/pagination.html' %}</div>
+{% endblock %}

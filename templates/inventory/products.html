@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="toolbar"><h1>Productos</h1>{% if perms.inventory.add_product %}<a class="button" href="{% url 'inventory:product_create' %}">Nuevo producto</a>{% endif %}</div>
+<form class="card filters" method="get"><div><label for="q">Buscar</label><input id="q" name="q" value="{{ query }}" placeholder="Código o nombre"></div><button>Buscar</button></form>
+<div class="card scroll"><table><thead><tr><th>Código</th><th>Nombre</th><th>Unidad base</th><th>Categoría</th><th>Estado</th><th></th></tr></thead><tbody>
+{% for product in page %}<tr><td>{{ product.code }}</td><td>{{ product.name }}</td><td>{{ product.unit }}</td><td>{{ product.category|default:'—' }}</td><td>{{ product.active|yesno:'Activo,Inactivo' }}</td><td>{% if perms.inventory.change_product %}<a href="{% url 'inventory:product_edit' product.pk %}">Editar</a>{% endif %}</td></tr>{% empty %}<tr><td class="empty" colspan="6">No hay productos registrados para esta búsqueda.</td></tr>{% endfor %}
+</tbody></table>{% include 'inventory/pagination.html' %}</div>
+{% endblock %}

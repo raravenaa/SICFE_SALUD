@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Movimientos{% endblock %}
+{% block content %}
+<div class="toolbar"><h1>Movimientos</h1>{% if perms.inventory.record_movement %}<a class="button" href="{% url 'inventory:movement_create' %}">Registrar movimiento</a>{% endif %}</div>
+<div class="card scroll"><table><thead><tr><th>Número</th><th>Fecha</th><th>Bodega</th><th>Tipo</th><th>Referencia</th><th>Estado</th><th>Registrado por</th></tr></thead><tbody>
+{% for movement in page %}<tr><td><a href="{% url 'inventory:movement_detail' movement.pk %}">#{{ movement.pk }}</a></td><td>{{ movement.effective_date|date:'d/m/Y' }}</td><td>{{ movement.warehouse }}</td><td>{{ movement.get_kind_display }}</td><td>{{ movement.reference }}</td><td><span class="badge">{{ movement.get_status_display }}</span></td><td>{{ movement.created_by }}</td></tr>{% empty %}<tr><td class="empty" colspan="7">Todavía no hay movimientos en tus bodegas.</td></tr>{% endfor %}
+</tbody></table>{% include 'inventory/pagination.html' %}</div>
+{% endblock %}

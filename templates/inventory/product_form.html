@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Producto{% endblock %}
+{% block content %}
+<h1>{% if editing %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
+<form method="post" class="card">{% csrf_token %}{{ form.as_p }}<div class="actions"><button>Guardar producto</button><a href="{% url 'inventory:products' %}">Volver</a></div></form>
+{% endblock %}

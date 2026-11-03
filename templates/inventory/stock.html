@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Existencias{% endblock %}
+{% block content %}
+<div class="toolbar"><div><h1>Existencias</h1><p class="muted">Stock por bodega, producto y lote. Ordenado por vencimiento.</p></div>
+  {% if perms.inventory.record_movement %}<a class="button" href="{% url 'inventory:movement_create' %}">Registrar movimiento</a>{% endif %}
+</div>
+<form class="card filters" method="get">
+  <div><label for="q">Producto o lote</label><input id="q" name="q" value="{{ query }}" placeholder="Código, nombre o lote"></div>
+  <div><label for="warehouse">Bodega</label><select id="warehouse" name="warehouse"><option value="">Todas mis bodegas</option>{% for warehouse in warehouses %}<option value="{{ warehouse.pk }}" {% if selected_warehouse == warehouse.pk|stringformat:'s' %}selected{% endif %}>{{ warehouse }}</option>{% endfor %}</select></div>
+  <div><label for="status">Vencimiento</label><select id="status" name="status"><option value="">Todos</option><option value="expired" {% if status == 'expired' %}selected{% endif %}>Vencidos con stock</option><option value="soon" {% if status == 'soon' %}selected{% endif %}>Próximos 90 días con stock</option></select></div>
+  <button>Filtrar</button><a href="{% url 'inventory:stock' %}">Limpiar</a>
+</form>
+<div class="card scroll"><table><thead><tr><th>Producto</th><th>Bodega</th><th>Lote</th><th>Vencimiento</th><th class="number">Stock físico</th><th class="number">Disponible</th></tr></thead>
+<tbody>{% for row in page %}<tr><td>{{ row.lot.product }}<br><small>{{ row.lot.product.unit }}{% if not row.lot.product.active %} · Inactivo{% endif %}</small></td><td>{{ row.warehouse }}</td><td>{{ row.lot.code }}</td><td><span class="badge {% if row.expired %}warning{% endif %}">{{ row.lot.expires_on|date:'d/m/Y' }}</span></td><td class="number">{{ row.quantity|floatformat:3 }}</td><td class="number">{{ row.available|floatformat:3 }}</td></tr>
+{% empty %}<tr><td class="empty" colspan="6">No hay existencias para estos filtros. Los ingresos aparecerán al confirmar un movimiento.</td></tr>{% endfor %}</tbody></table>{% include 'inventory/pagination.html' %}</div>
+{% if perms.inventory.view_costs %}
+<h2>Valorización por producto y bodega</h2><p class="muted">Valores en CLP. Incluye existencias vencidas. Esta tabla usa los filtros de producto y bodega, sin desglosar por lote o vencimiento.</p>
+<div class="card scroll"><table><thead><tr><th>Producto</th><th>Bodega</th><th class="number">Cantidad</th><th class="number">Costo promedio</th><th class="number">Valor total</th></tr></thead><tbody>
+{% for row in costs %}<tr><td>{{ row.product }}</td><td>{{ row.warehouse }}</td><td class="number">{{ row.quantity|floatformat:3 }}</td><td class="number">{{ row.average_cost|floatformat:6 }}</td><td class="number">{{ row.value|floatformat:6 }}</td></tr>{% empty %}<tr><td class="empty" colspan="5">Sin saldos valorizados.</td></tr>{% endfor %}</tbody></table>{% include 'inventory/pagination.html' with page=costs %}</div>
+{% endif %}
+{% endblock %}

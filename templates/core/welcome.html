@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="badge">Entorno de desarrollo</p><h1>SICFE</h1>
+  <p>Sistema Integrado de Control y Fiscalización de Existencias.</p>
+  <p>Control de productos, lotes, ingresos y salidas, con stock por bodega y trazabilidad de movimientos.</p>
+  {% if user.is_authenticated %}
+    {% if perms.inventory.view_stock %}<a class="button" href="{% url 'inventory:stock' %}">Consultar existencias</a>{% else %}<p>Tu cuenta aún no tiene permisos de existencias. Solicita la asignación de un perfil y una bodega al administrador.</p>{% endif %}
+  {% else %}<a class="button" href="{% url 'login' %}">Ingresar</a>{% endif %}
+</section>
+{% endblock %}

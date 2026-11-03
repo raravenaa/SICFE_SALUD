@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Registrar movimiento{% endblock %}
+{% block content %}
+<h1>Registrar movimiento</h1><p class="muted">Se registrará con fecha de hoy. Primero guardarás un borrador para revisar y confirmar.</p>
+<form method="post">{% csrf_token %}
+  <section class="card">{{ form.as_p }}</section>
+  <h2>Productos y lotes</h2><p>Usa una línea por lote. En salidas, copia el código y vencimiento del lote disponible en Existencias.</p>
+  {{ formset.management_form }}{{ formset.non_form_errors }}
+  <div id="lines">{% for line in formset %}<section class="card grid line">{{ line.as_p }}</section>{% endfor %}</div>
+  <template id="empty-line"><section class="card grid line">{{ formset.empty_form.as_p }}</section></template>
+  <div class="actions"><button type="button" class="secondary" id="add-line">Agregar lote</button><button>Guardar borrador</button><a href="{% url 'inventory:movements' %}">Volver</a></div>
+</form>
+<script>
+  document.getElementById('add-line').addEventListener('click', function () {
+    const total = document.getElementById('id_lines-TOTAL_FORMS');
+    const count = Number(total.value);
+    if (count >= 50) return;
+    const html = document.getElementById('empty-line').innerHTML.replaceAll('__prefix__', String(count));
+    document.getElementById('lines').insertAdjacentHTML('beforeend', html);
+    total.value = count + 1;
+    if (count + 1 >= 50) this.disabled = true;
+  });
+</script>
+{% endblock %}
